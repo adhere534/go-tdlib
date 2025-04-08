@@ -13,6 +13,7 @@ type Client struct {
 	resultHandler   ResultHandler
 	catchersStore   *sync.Map
 	fallbackTimeout time.Duration
+	stop           chan struct{} // 新增停止信号
 }
 
 type Option func(*Client)
@@ -64,6 +65,7 @@ func NewClient(authorizationStateHandler AuthorizationStateHandler, options ...O
 		jsonClient:    NewJsonClient(),
 		responses:     make(chan *Response, 1000),
 		catchersStore: &sync.Map{},
+		stop:           make(chan struct{}), // 初始化 stop
 	}
 
 	client.extraGenerator = UuidV4Generator()
