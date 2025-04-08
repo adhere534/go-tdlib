@@ -65,19 +65,31 @@ func (instance *tdlib) getClient(id int) (*Client, error) {
 
 func (instance *tdlib) receiver() {
 	for {
-		resp, err := instance.receive(instance.timeout)
-		if err != nil {
-			continue
-		}
+        select {
+        case <-instance.clients[resp.ClientId].stop: 
+            log.Printf("Stopping receiver for client %d due to authorization closed", resp.ClientId)
+            return // 退出 receiver
+        default:
+            resp, err := instance.receive(instance.timeout)
+            if err != nil {
+                continue
+            }
 
-		client, err := instance.getClient(resp.MetaClientId)
-		if err != nil {
-			log.Print(err)
-			continue
-		}
+            client, err := instance.getClient(resp.ClientId)
+            if err != nil {
+                log.Print(err)
+                continue
+            }
 
-		client.responses <- resp
-	}
+            select {
+            case client.responses <- resp:
+                // 发送成功
+            default:
+                log.Printf("Channel closed or blocked for client %d, skipping response", resp.ClientId)
+                continue
+            }
+        }
+    }
 }
 
 // Receives incoming updates and request responses from the TDLib client. May be called from any thread, but
