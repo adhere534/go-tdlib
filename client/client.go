@@ -104,6 +104,7 @@ func (client *Client) receiver() {
 		if typ.GetConstructor() == ConstructorUpdateAuthorizationState &&
 			typ.(*UpdateAuthorizationState).AuthorizationState.AuthorizationStateConstructor() == ConstructorAuthorizationStateClosed {
 			close(client.responses)
+			close(client.stop)      // 发送停止信号	
 		}
 	}
 }
